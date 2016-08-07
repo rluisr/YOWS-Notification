@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<!--suppress ALL -->
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <link href='https://fonts.googleapis.com/css?family=Passion+One:700,900,400' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="css/photon.min.css"/>
+    <title>YOWS Notification</title>
+
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.1.0.min.js"></script>
+
+    <script type="text/javascript">
+        if (typeof module === "object" && module.exports) {
+            window.$ = window.jQuery = module.exports;
+            module.exports = {};
+        }
+    </script>
+
+    <link rel="stylesheet" href="./css/remodal.css">
+    <link rel="stylesheet" href="./css/remodal-default-theme.css">
+    <script src="./js/remodal.min.js"></script>
+
+    <script type="text/javascript">
+        function openWindow() {
+            const inst = $('[data-remodal-id=modal]').remodal();
+            inst.open();
+        }
+    </script>
+
+</head>
+<body>
+
+<div class="window">
+<!-- // ヘッダー // -->
+
+    <div class="window-content">
+        <div id="temp">
+            <p></p>
+        </div>
+        <table class="table-striped">
+            <thead>
+            <tr>
+                <th><img class="title" src="./img/title.png">&nbsp;&nbsp;&nbsp;Title</th>
+                <th>Date</th>
+            </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- // モーダルウィンドウはコ↑コ↓ // -->
+    <div class="remodal" data-remodal-id="modal" data-remodal-options="hashTracking:false">
+        <button data-remodal-action="close" class="remodal-close"></button>
+        <h3></h3>
+        <hr>
+        <p></p>
+        <button data-remodal-action="cancel" class="remodal-cancel">Cancel</button>
+        <button data-remodal-action="confirm" class="remodal-confirm">OK</button>
+    </div>
+</div>
+
+<script type="text/javascript">
+    require('electron-connect').client.create();
+    const ipcRenderer = require('electron').ipcRenderer;
+    const {shell} = require('electron');
+
+    let array_date = new Array();
+    let array_title = new Array();
+    let array_link = new Array();
+    let array_contents = new Array();
+
+    const p1 = new Promise(function (resolve, reject) {
+        ipcRenderer.on('contents_date', function (event, message) {
+            array_date = message;
+            resolve();
+        });
+    });
+
+    const p2 = new Promise(function (resolve, reject) {
+        ipcRenderer.on('contents_title', function (event, message) {
+            array_title = message;
+            resolve();
+        });
+    });
+
+    const p3 = new Promise(function (resolve, reject) {
+        ipcRenderer.on('link', function (event, message) {
+            array_link = message;
+            resolve();
+        });
+    });
+
+    const p4 = new Promise(function (resolve, reject) {
+        ipcRenderer.on('contents', function (event, message) {
+            array_contents = message;
+            resolve();
+        });
+    });
+
+    Promise.all([p1, p2, p3, p4]).then(function () {
+        for (let i = 0; i < array_date.length; i++) {
+
+            let tr = document.createElement("tr");
+            tr.setAttribute("class", "contents_title");
+            //tr.setAttribute("onclick", "openWindow(#contents)");
+
+            tr.innerHTML =
+                    "<td>" + array_title[i] + "</td>" +
+                    "<td>" + array_date[i] + "</td>";
+
+            const obj = document.getElementsByTagName("tbody").item(0);
+            obj.appendChild(tr);
+        }
+
+        /**
+         * ヘッダーの挿入
+         **/
+        $("div.window").prepend(
+                "<header class=\"windows-header\">" +
+                "<img class=\"windows-move\" src=\"./img/move.png\">" +
+                "<p class=\"windows-title\" onclick=\"openYOWS('https://yukari.xzy.pw/');\">YOWS Notification v0.0.1</p>" +
+                "<div class=\"windows-right\">" +
+                "<p class=\"windows-right-contents\">NEW :<span onclick=\"openYOWS(array_link[0]);\">" + array_title[0] + "</span></p>" +
+                "</div>" +
+                "</header>"
+        );
+
+        /**
+         * Windows と Mac の判定
+         **/
+        if (navigator.platform.indexOf("Win") == -1) { // Mac
+            $(function() {
+                $('.windows-title').css('margin-top', '2%');
+            });
+        }
+
+    }, function () {
+        /* エラー処理 */
+    });
+
+    function openYOWS(url) {
+        shell.openExternal(url);
+    }
+
+    // クリックされた要素の番号を取得して、モーダルウィンドウの中身を書き換えて表示させる
+    $(document).on("click", ".contents_title", function () {
+        const index = $("tr.contents_title").index(this);
+
+        $('div.remodal > h3').text(array_title[index]);
+        $('div.remodal > p').text(array_contents[index]);
+
+        openWindow();
+    });
+</script>
+
+</body>
+</html>
