@@ -1,27 +1,55 @@
+/**
+ * 【Todo】
+ * Error Handling
+ * Auto Update on Mac
+ */
 const {app, BrowserWindow, Tray, Menu, shell, autoUpdater} = require('electron');
 const electron = require('electron-connect');
 const client = require('cheerio-httpcli');
-const CronJob = require('cron').CronJob;
 const notifier = require('node-notifier');
+const CronJob = require('cron').CronJob;
 const ws = require('windows-shortcuts');
+const username = require('username');
+const request = require('request');
 const async = require('async');
 const path = require('path');
 const fs = require('fs');
+require('date-utils');
 
-let mainWindow;
-let aboutWindow;
-let tray;
-let old;
-let contextMenu;
-let menu;
-let array_date = [];
-let array_title = [];
-let array_link = [];
-let array_contents = [];
+let mainWindow, aboutWindow, errorWindow, tray, old, contextMenu, menu;
+let array_date = [], array_title = [], array_link = [], array_contents = [];
 let pjson = require(__dirname + '/package.json');
+let dt = new Date().toFormat("YYYY/MM/DD HH24時MI分SS秒");
 
+const headers = {
+    'Content-Type': 'application/json',
+    'User-Agent': 'YOWS-Notification - https://yukari.xzy.pw/'
+};
 const squirrelCommand = process.argv[1];
 const url = 'http://www.tamurayukari.com/';
+
+/**
+ * Send information system to me for grasping situation.
+ * Mac Address is used as static id.
+ */
+require('getmac').getMac(function(err,macAddress){
+    const macaddress = macAddress;
+
+    let options = {
+        url: 'https://yukari.xzy.pw/static.php',
+        method: 'POST',
+        headers: headers,
+        json: {
+            "id": macaddress,
+            "os": process.platform,
+            "version": pjson.version,
+            "date": dt
+        }
+    };
+    request(options, function (err, response, body) {
+        /* エラー処理 */
+    });
+});
 
 const handleStartupEvent = function () {
     if (process.platform !== 'win32') {
@@ -65,7 +93,7 @@ async.waterfall([
      */
         function startRenderer(callback) {
         app.on('ready', () => {
-            tray = new Tray(__dirname + '/img/tray.png');
+            tray = new Tray(__dirname + '/assets/img/tray.png');
 
             contextMenu = Menu.buildFromTemplate([
                 {
@@ -80,7 +108,7 @@ async.waterfall([
                         titleBarStyle: 'hidden' // for macOS
                     });
 
-                    aboutWindow.loadURL('file://' + __dirname + '/about.html');
+                    aboutWindow.loadURL('file://' + __dirname + '/assets/about.html');
 
                     aboutWindow.on('closed', function () {
                         aboutWindow = null;
@@ -110,7 +138,7 @@ async.waterfall([
                                 titleBarStyle: 'hidden' // for macOS
                             });
 
-                            aboutWindow.loadURL('file://' + __dirname + '/about.html');
+                            aboutWindow.loadURL('file://' + __dirname + '/assets/about.html');
 
                             aboutWindow.on('closed', function () {
                                 aboutWindow = null;
@@ -134,7 +162,7 @@ async.waterfall([
             mainWindow = new BrowserWindow({
                 height: 600,
                 width: 800,
-                icon: __dirname + '/img/icon.png',
+                icon: __dirname + '/assets/img/icon.png',
                 resizable: false,
                 frame: false,
                 transparent: false,
@@ -159,6 +187,28 @@ async.waterfall([
      */
         function (callback) {
         client.fetch(url, function (error, $, res) {
+            /* ネットワークエラーとか、メンテンナンス対応 */
+            if (error) {
+                errorWindow = new BrowserWindow({
+                    height: 600,
+                    width: 800,
+                    icon: __dirname + '/assets/img/icon.png',
+                    resizable: false,
+                    frame: false,
+                    transparent: false,
+                    nodeIntegration: false,
+                    titleBarStyle: 'hidden' // for macOS
+                });
+
+                errorWindow.loadURL('file://' + __dirname + '/assets/error.html');
+
+                errorWindow.on('closed', function () {
+                    errorWindow = null;
+                });
+
+                return false;
+            }
+
             let i = 0;
 
             /* [1] 何個お知らせが出てるか取得 */
@@ -220,7 +270,7 @@ async.waterfall([
      */
         function (callback) {
         var job = new CronJob({
-            cronTime: '0 */1 * * * *',
+            cronTime: '0 */5 * * * *',
             onTick: function () {
                 client.fetch(url, function (error, $, res) {
                     let now = $("td a").eq(0).text();
@@ -262,7 +312,7 @@ function Notification(title, url) {
     notifier.notify({
         title: 'YOWS Notification',
         message: '田村ゆかり公式サイトが更新されました！\r詳しくはここをクリック！',
-        icon: path.join(__dirname, '/img/icon.png'),
+        icon: path.join(__dirname, '/assets/img/icon.png'),
         wait: true,
         sound: true
 

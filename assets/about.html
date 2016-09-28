@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link href='https://fonts.googleapis.com/css?family=Passion+One:700,900,400' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="css/photon.min.css"/>
+    <title>YOWS Notification</title>
+
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.1.0.min.js"></script>
+
+    <script type="text/javascript">
+        if (typeof module === "object" && module.exports) {
+            window.$ = window.jQuery = module.exports;
+            module.exports = {};
+        }
+    </script>
+</head>
+<body>
+
+<div class="window">
+    <header class="about-windows-header">
+        <p class="about-windows-title" onclick="openYOWS('https://yukari.xzy.pw/');">YOWS Notification</p>
+        <div class="about-windows-right">
+            <p class="about-windows-contents">About this Software</p>
+        </div>
+    </header>
+
+    <div class="window-content">
+        <div class="about">
+            <h4 class="about-title">このソフトについて</h4>
+            <hr>
+            <p>田村ゆかり公式サイトが更新される度、通知をするソフトウェアです。<br>
+                本ソフトウェアのソースコードは <a href="" onclick="openYOWS('https://github.com/rluisr/electron_yukari');">GitHub</a> にて公開しています。<br>
+                質問・要望・バグ報告などがありましたら <a href="" onclick="openYOWS('https://twitter.com/lu_iskun');">@lu_iskun</a> までお知らせください。<br>
+                また情報取得するに当って、当行為（スクレイピング）は運営事務局である「Limeand.co」により承諾済みです。</p>
+            <br>
+            <h4 class="about-title">利用規約</h4>
+            <hr>
+            <p>本ソフトウェアを使用し不利益なことが起きても本ソフトウェアの作成者は一切の責任を負いません。</p>
+            <br>
+            <button class="btn btn-large btn-default" onclick="window.close();">閉じる</button>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    const {shell} = require('electron');
+
+    function openYOWS(url) {
+        shell.openExternal(url);
+    }
+
+    /**
+     * Windows と Mac の判定
+     **/
+    if (navigator.platform.indexOf("Win") == -1) { // Mac
+        $(function() {
+            //$('.windows-header').css('height', '11%');
+            $('.about-windows-title').css('margin-top', '2%');
+        });
+    }
+</script>
+</body>
+</html>
